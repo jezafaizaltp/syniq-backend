@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SynIQ — The AI That Learns How You Learn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --brick:#8B2500;--brick-deep:#5C1800;--brick-mid:#B03A00;
+  --brick-light:#D4521A;--brick-glow:#E8733A;
+  --cream:#FAF5EE;--cream-dark:#F0E8DB;--parchment:#E8D9C4;
+  --charcoal:#1A1208;--ink:#2D1F10;
+  --stone:#8C7B6A;--stone-light:#B5A898;
+  --gold:#C9952A;--gold-light:#E4B84A;--white:#FFFDF9;
+  --ff-display:'Playfair Display',Georgia,serif;
+  --ff-body:'DM Sans',sans-serif;
+  --ff-mono:'DM Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--ff-body);background:var(--cream);color:var(--charcoal);overflow-x:hidden;cursor:none;}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.7;}
+
+/* CURSOR */
+.c-dot{position:fixed;width:8px;height:8px;background:var(--brick);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .2s,height .2s;}
+.c-ring{position:fixed;width:32px;height:32px;border:1.5px solid var(--brick);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .2s,height .2s;opacity:.55;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:20px 56px;display:flex;align-items:center;justify-content:space-between;background:rgba(250,245,238,.88);backdrop-filter:blur(22px);border-bottom:1px solid rgba(139,37,0,.1);transition:padding .3s;}
+.n-logo{font-family:var(--ff-display);font-weight:900;font-size:1.65rem;color:var(--brick-deep);letter-spacing:-.02em;}
+.n-logo span{color:var(--brick-light);}
+.n-links{display:flex;gap:32px;list-style:none;}
+.n-links a{font-size:.875rem;font-weight:500;color:var(--stone);text-decoration:none;transition:color .2s;position:relative;}
+.n-links a::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:1px;background:var(--brick);transform:scaleX(0);transform-origin:left;transition:transform .3s;}
+.n-links a:hover{color:var(--brick);}
+.n-links a:hover::after{transform:scaleX(1);}
+.n-cta{background:var(--brick);color:var(--white)!important;padding:10px 24px;border-radius:100px;font-weight:600!important;}
+.n-cta:hover{background:var(--brick-deep)!important;}
+.n-cta::after{display:none!important;}
+
+/* HERO */
+.hero{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:140px 56px 80px;gap:70px;position:relative;overflow:hidden;}
+.hero-bg{position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(139,37,0,.055) 0%,transparent 70%);top:50%;right:2%;transform:translateY(-50%);pointer-events:none;}
+.hero-lines{position:absolute;inset:0;background-image:repeating-linear-gradient(0deg,transparent,transparent 59px,rgba(139,37,0,.035) 60px);pointer-events:none;}
+.hero-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(139,37,0,.07);border:1px solid rgba(139,37,0,.18);color:var(--brick);padding:6px 16px;border-radius:100px;font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;margin-bottom:28px;}
+.tag-dot{width:6px;height:6px;background:var(--brick);border-radius:50%;animation:pdot 2s ease-in-out infinite;}
+@keyframes pdot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(.55);}}
+.hero-h1{font-family:var(--ff-display);font-size:clamp(2.9rem,4.8vw,4.6rem);font-weight:900;line-height:1.04;letter-spacing:-.035em;color:var(--charcoal);margin-bottom:28px;}
+.hero-h1 em{font-style:italic;color:var(--brick);}
+.uw{position:relative;display:inline-block;}
+.uw::after{content:'';position:absolute;bottom:5px;left:0;right:0;height:3px;background:var(--gold);border-radius:2px;}
+.hero-sub{font-size:1.05rem;line-height:1.75;color:var(--stone);max-width:500px;margin-bottom:44px;font-weight:300;}
+.hero-actions{display:flex;gap:16px;align-items:center;flex-wrap:wrap;}
+.btn-p{background:var(--brick);color:var(--white);padding:16px 36px;border-radius:100px;font-family:var(--ff-body);font-size:1rem;font-weight:600;border:none;cursor:none;transition:background .2s,transform .2s,box-shadow .2s;box-shadow:0 4px 24px rgba(139,37,0,.25);}
+.btn-p:hover{background:var(--brick-deep);transform:translateY(-2px);box-shadow:0 8px 32px rgba(139,37,0,.35);}
+.btn-g{background:transparent;color:var(--ink);padding:16px 28px;border-radius:100px;font-family:var(--ff-body);font-size:1rem;font-weight:500;border:1.5px solid var(--parchment);cursor:none;transition:border-color .2s,color .2s;display:flex;align-items:center;gap:8px;}
+.btn-g:hover{border-color:var(--brick);color:var(--brick);}
+.hero-stats{display:flex;gap:40px;margin-top:56px;padding-top:36px;border-top:1px solid var(--parchment);}
+.hstat-n{font-family:var(--ff-display);font-size:2rem;font-weight:700;color:var(--brick);display:block;}
+.hstat-l{font-size:.78rem;color:var(--stone);font-weight:500;letter-spacing:.04em;}
+
+/* PHONE MOCKUP */
+.hero-right{display:flex;justify-content:center;align-items:center;position:relative;}
+.phone-wrap{position:relative;width:300px;animation:pfloat 6s ease-in-out infinite;}
+@keyframes pfloat{0%,100%{transform:translateY(0) rotate(-2deg);}50%{transform:translateY(-14px) rotate(-2deg);}}
+.phone-glow{position:absolute;inset:-40px;background:radial-gradient(ellipse,rgba(139,37,0,.11) 0%,transparent 70%);border-radius:50%;}
+.phone-shell{background:var(--charcoal);border-radius:40px;padding:12px;box-shadow:0 40px 80px rgba(26,18,8,.45),0 0 0 1px rgba(255,255,255,.05);}
+.phone-notch{width:80px;height:20px;background:var(--charcoal);border-radius:0 0 14px 14px;margin:0 auto 6px;}
+.phone-screen{background:#16120A;border-radius:28px;overflow:hidden;}
+.p-ch{background:linear-gradient(135deg,#8B2500,#B03A00);padding:12px 14px;display:flex;align-items:center;gap:9px;}
+.p-av{width:32px;height:32px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.p-ch p:first-child{font-size:.7rem;font-weight:600;color:#fff;}
+.p-ch p:last-child{font-size:.58rem;color:rgba(255,255,255,.6);}
+.p-online{width:6px;height:6px;background:#4ade80;border-radius:50%;margin-left:auto;box-shadow:0 0 6px #4ade80;animation:blon 2s ease-in-out infinite;}
+@keyframes blon{0%,100%{opacity:1;}50%{opacity:.35;}}
+.p-msgs{padding:10px;display:flex;flex-direction:column;gap:7px;}
+.pmb,.pmu{max-width:85%;padding:7px 11px;border-radius:14px;font-size:.64rem;line-height:1.5;font-family:var(--ff-body);}
+.pmb{background:rgba(255,255,255,.08);color:rgba(255,255,255,.88);border-bottom-left-radius:3px;align-self:flex-start;}
+.pmu{background:var(--brick);color:#fff;border-bottom-right-radius:3px;align-self:flex-end;}
+.p-tag{display:inline-block;background:rgba(201,149,42,.22);color:var(--gold-light);padding:2px 7px;border-radius:100px;font-size:.52rem;font-weight:700;margin-bottom:3px;}
+.p-input{display:flex;align-items:center;gap:7px;padding:8px 10px;background:rgba(255,255,255,.03);border-top:1px solid rgba(255,255,255,.05);}
+.p-inp-mock{flex:1;background:rgba(255,255,255,.06);border-radius:18px;padding:6px 11px;font-size:.57rem;color:rgba(255,255,255,.28);}
+.p-send{width:24px;height:24px;background:var(--brick);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;}
+.pbadge{position:absolute;background:var(--white);border-radius:14px;padding:7px 13px;box-shadow:0 8px 24px rgba(26,18,8,.18);font-size:.67rem;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:5px;white-space:nowrap;border:1px solid var(--parchment);}
+.pb1{top:20px;right:-55px;animation:bfloat 4s ease-in-out infinite;}
+.pb2{bottom:90px;left:-65px;animation:bfloat 4s ease-in-out infinite 2s;}
+.pb3{top:170px;right:-68px;animation:bfloat 4s ease-in-out infinite 1s;}
+@keyframes bfloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
+.bdot{width:7px;height:7px;border-radius:50%;}
+
+/* SECTION COMMONS */
+.s-label{font-size:.68rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--brick);margin-bottom:16px;display:flex;align-items:center;gap:12px;}
+.s-label::before{content:'';width:28px;height:1px;background:var(--brick);display:block;}
+.fade-up{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease;}
+.fade-up.visible{opacity:1;transform:translateY(0);}
+.container{max-width:1180px;margin:0 auto;}
+
+/* CHATBOT SECTION */
+.chat-section{background:var(--charcoal);padding:100px 56px;position:relative;overflow:hidden;}
+.chat-section::before{content:'';position:absolute;top:-180px;right:-180px;width:550px;height:550px;background:radial-gradient(circle,rgba(139,37,0,.14) 0%,transparent 70%);border-radius:50%;pointer-events:none;}
+.chat-grid{display:grid;grid-template-columns:1fr 1.45fr;gap:80px;align-items:start;position:relative;z-index:1;}
+.chat-info .s-label{color:var(--gold-light);}
+.chat-info .s-label::before{background:var(--gold-light);}
+.chat-h2{font-family:var(--ff-display);font-size:clamp(2rem,3.3vw,3rem);font-weight:900;color:var(--white);line-height:1.1;letter-spacing:-.03em;margin-bottom:22px;}
+.chat-h2 em{color:var(--brick-glow);font-style:italic;}
+.chat-desc{font-size:.97rem;line-height:1.8;color:rgba(255,253,249,.55);font-weight:300;margin-bottom:40px;}
+.vprop{display:flex;gap:16px;align-items:flex-start;margin-bottom:24px;}
+.vprop-icon{width:42px;height:42px;background:rgba(139,37,0,.25);border:1px solid rgba(139,37,0,.35);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.vprop-title{font-weight:600;font-size:.92rem;color:rgba(255,253,249,.9);margin-bottom:3px;}
+.vprop-text{font-size:.8rem;line-height:1.6;color:rgba(255,253,249,.45);font-weight:300;}
+
+/* LIVE CHAT */
+.live-wrap{background:#0D0A05;border-radius:28px;overflow:hidden;border:1px solid rgba(255,255,255,.065);box-shadow:0 40px 80px rgba(0,0,0,.55);display:flex;flex-direction:column;height:680px;}
+.lv-header{background:linear-gradient(135deg,var(--brick-deep),var(--brick));padding:18px 22px;display:flex;align-items:center;gap:13px;flex-shrink:0;}
+.lv-av{width:42px;height:42px;background:rgba(255,255,255,.14);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;animation:wiggle 3s ease-in-out infinite;flex-shrink:0;}
+@keyframes wiggle{0%,100%{transform:rotate(0);}25%{transform:rotate(-5deg);}75%{transform:rotate(5deg);}}
+.lv-title{font-weight:700;color:#fff;font-size:.97rem;}
+.lv-sub{font-size:.7rem;color:rgba(255,255,255,.58);margin-top:2px;}
+.lv-live{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:.67rem;color:rgba(255,255,255,.55);}
+.sdot{width:6px;height:6px;background:#4ade80;border-radius:50%;animation:blon 2s ease-in-out infinite;box-shadow:0 0 7px #4ade80;}
+.lv-msgs{flex:1;overflow-y:auto;padding:18px 18px 8px;display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth;}
+.lv-msgs::-webkit-scrollbar{width:0;}
+.bot-msg-wrap{display:flex;flex-direction:column;align-self:flex-start;max-width:88%;}
+.bot-lbl{font-size:.58rem;font-weight:700;letter-spacing:.09em;color:rgba(201,149,42,.8);text-transform:uppercase;margin-bottom:5px;padding-left:2px;}
+.bot-bubble{background:rgba(255,255,255,.075);color:rgba(255,255,255,.88);padding:11px 15px;border-radius:18px;border-bottom-left-radius:4px;font-size:.84rem;line-height:1.65;white-space:pre-wrap;}
+.user-bubble{background:var(--brick);color:#fff;padding:11px 15px;border-radius:18px;border-bottom-right-radius:4px;font-size:.84rem;line-height:1.6;align-self:flex-end;max-width:82%;}
+
+/* VISUAL EXPLANATION IN CHAT */
+.vis-card{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;margin-top:8px;}
+.vis-card-header{padding:10px 14px;display:flex;align-items:center;gap:8px;}
+.vis-card-header.wrong{background:rgba(220,38,38,.15);border-bottom:1px solid rgba(220,38,38,.2);}
+.vis-card-header.correct{background:rgba(22,163,74,.12);border-bottom:1px solid rgba(22,163,74,.2);}
+.vis-card-label{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+.vis-card-header.wrong .vis-card-label{color:#f87171;}
+.vis-card-header.correct .vis-card-label{color:#4ade80;}
+.vis-card-body{padding:14px;}
+.vis-insight{margin-top:6px;padding:10px 12px;background:rgba(201,149,42,.1);border:1px solid rgba(201,149,42,.18);border-radius:10px;font-size:.75rem;color:var(--gold-light);line-height:1.55;}
+
+/* TYPING */
+.typing-wrap{display:flex;gap:4px;align-items:center;padding:11px 15px;background:rgba(255,255,255,.07);border-radius:18px;border-bottom-left-radius:4px;width:fit-content;}
+.td{width:7px;height:7px;background:rgba(255,255,255,.38);border-radius:50%;}
+.td:nth-child(1){animation:tda 1.2s ease-in-out infinite;}
+.td:nth-child(2){animation:tda 1.2s ease-in-out .18s infinite;}
+.td:nth-child(3){animation:tda 1.2s ease-in-out .36s infinite;}
+@keyframes tda{0%,60%,100%{transform:translateY(0);opacity:.38;}30%{transform:translateY(-7px);opacity:1;}}
+
+/* QUICK PROMPTS */
+.prompts-bar{padding:8px 14px 6px;border-top:1px solid rgba(255,255,255,.05);flex-shrink:0;}
+.prompts-label{font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:5px;}
+.prompts-row{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;}
+.prompts-row::-webkit-scrollbar{height:0;}
+.prompt-btn{flex-shrink:0;padding:6px 13px;border-radius:100px;font-size:.72rem;font-weight:500;border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);cursor:none;white-space:nowrap;transition:all .2s;background:transparent;font-family:var(--ff-body);}
+.prompt-btn:hover{background:rgba(139,37,0,.22);border-color:rgba(232,115,58,.4);color:rgba(255,255,255,.92);}
+
+/* INPUT */
+.lv-input{padding:12px 14px 14px;display:flex;gap:9px;align-items:flex-end;background:rgba(255,255,255,.018);border-top:1px solid rgba(255,255,255,.055);flex-shrink:0;}
+#chat-input{flex:1;background:rgba(255,255,255,.065);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:10px 16px;color:rgba(255,255,255,.9);font-family:var(--ff-body);font-size:.84rem;outline:none;resize:none;min-height:40px;max-height:96px;transition:border-color .2s;cursor:text;line-height:1.5;}
+#chat-input::placeholder{color:rgba(255,255,255,.22);}
+#chat-input:focus{border-color:rgba(139,37,0,.5);}
+.send-btn{width:40px;height:40px;background:var(--brick);border:none;border-radius:50%;cursor:none;display:flex;align-items:center;justify-content:center;font-size:15px;transition:background .2s,transform .15s;flex-shrink:0;}
+.send-btn:hover{background:var(--brick-deep);transform:scale(1.07);}
+
+/* PRACTICE SECTION */
+.practice-s{background:var(--charcoal);padding:96px 56px;position:relative;overflow:hidden;}
+.practice-s::before{content:'';position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:700px;height:400px;background:radial-gradient(ellipse,rgba(139,37,0,.1) 0%,transparent 65%);pointer-events:none;}
+.practice-inner{max-width:720px;margin:0 auto;position:relative;z-index:1;}
+.pq-card{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);border-radius:24px;padding:28px;margin-top:32px;}
+.pq-label{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-light);margin-bottom:12px;}
+.pq-text{font-size:1rem;color:rgba(255,255,255,.9);line-height:1.6;margin-bottom:18px;}
+.pq-visual{display:flex;justify-content:center;margin-bottom:20px;min-height:80px;}
+.p-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.p-opt{background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:14px;padding:13px 16px;font-family:var(--ff-body);font-size:.95rem;font-weight:600;color:rgba(255,255,255,.8);cursor:none;transition:all .2s;text-align:center;}
+.p-opt:hover:not(:disabled){background:rgba(139,37,0,.2);border-color:rgba(232,115,58,.4);color:#fff;}
+.p-opt.p-correct{background:rgba(22,163,74,.2);border-color:rgba(22,163,74,.5);color:#4ade80;}
+.p-opt.p-wrong{background:rgba(220,38,38,.15);border-color:rgba(220,38,38,.4);color:#f87171;}
+.p-opt:disabled{cursor:not-allowed;}
+.p-vis-exp{margin-top:16px;border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,.07);animation:slideIn .4s ease;}
+@keyframes slideIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.p-vh{padding:12px 18px;display:flex;align-items:center;gap:9px;}
+.p-vh.wh{background:rgba(220,38,38,.14);border-bottom:1px solid rgba(220,38,38,.18);}
+.p-vh.ch{background:rgba(22,163,74,.1);border-bottom:1px solid rgba(22,163,74,.18);}
+.p-vh-lbl{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+.p-vh.wh .p-vh-lbl{color:#f87171;}
+.p-vh.ch .p-vh-lbl{color:#4ade80;}
+.p-vb{padding:16px 18px;background:rgba(0,0,0,.25);}
+.p-insight{margin-top:8px;padding:12px 14px;background:rgba(201,149,42,.09);border:1px solid rgba(201,149,42,.18);border-radius:12px;font-size:.78rem;color:var(--gold-light);line-height:1.6;}
+.p-next{width:100%;margin-top:14px;padding:13px;background:var(--brick);border:none;border-radius:13px;font-family:var(--ff-body);font-size:.9rem;font-weight:600;color:#fff;cursor:none;transition:background .2s,transform .15s;}
+.p-next:hover{background:var(--brick-deep);transform:translateY(-1px);}
+.p-celebrate{text-align:center;padding:20px;animation:pop .4s ease;}
+@keyframes pop{from{transform:scale(.85);opacity:0;}to{transform:scale(1);opacity:1;}}
+.topic-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+.topic-btn{padding:7px 16px;border-radius:100px;font-size:.73rem;font-weight:600;border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.45);background:transparent;cursor:none;transition:all .2s;font-family:var(--ff-body);}
+.topic-btn.tp-active{background:rgba(139,37,0,.28);border-color:rgba(232,115,58,.4);color:var(--brick-glow);}
+.p-progress{height:3px;background:rgba(255,255,255,.07);border-radius:100px;margin-top:16px;overflow:hidden;}
+.p-progress-fill{height:100%;background:linear-gradient(90deg,var(--brick),var(--brick-glow));border-radius:100px;transition:width .5s ease;}
+
+/* HOW SECTION */
+.how-s{padding:96px 56px;background:var(--cream);}
+.how-h2{font-family:var(--ff-display);font-size:clamp(2rem,3.2vw,2.9rem);font-weight:900;letter-spacing:-.03em;color:var(--charcoal);max-width:580px;line-height:1.12;margin-bottom:56px;}
+.how-h2 em{color:var(--brick);font-style:italic;}
+.how-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--parchment);border-radius:22px;overflow:hidden;}
+.how-card{background:var(--cream);padding:44px 32px;transition:background .3s;}
+.how-card:hover{background:#FDF9F4;}
+.how-num{font-family:var(--ff-display);font-size:3.8rem;font-weight:900;color:rgba(139,37,0,.07);line-height:1;margin-bottom:14px;}
+.how-icon{font-size:1.9rem;margin-bottom:18px;}
+.how-title{font-family:var(--ff-display);font-size:1.18rem;font-weight:700;color:var(--charcoal);margin-bottom:10px;}
+.how-text{font-size:.87rem;line-height:1.72;color:var(--stone);font-weight:300;}
+
+/* WHAT YOU'LL NOTICE */
+.notice-s{padding:96px 56px;background:var(--cream-dark);position:relative;}
+.notice-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:80px;align-items:start;max-width:1180px;margin:0 auto;}
+.notice-h2{font-family:var(--ff-display);font-size:clamp(2rem,3vw,2.9rem);font-weight:900;line-height:1.1;letter-spacing:-.03em;color:var(--charcoal);margin-bottom:20px;}
+.notice-h2 em{color:var(--brick);font-style:italic;}
+.nbullet{display:flex;gap:16px;align-items:flex-start;margin-bottom:24px;}
+.nb-icon{width:42px;height:42px;background:var(--parchment);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.nb-title{font-weight:600;font-size:.92rem;color:var(--charcoal);margin-bottom:3px;}
+.nb-text{font-size:.83rem;line-height:1.65;color:var(--stone);font-weight:300;}
+.iq-panel{background:var(--charcoal);border-radius:22px;padding:28px;position:relative;overflow:hidden;margin-bottom:18px;}
+.iq-panel::before{content:'';position:absolute;top:-50px;right:-50px;width:160px;height:160px;background:radial-gradient(circle,rgba(139,37,0,.18) 0%,transparent 70%);border-radius:50%;}
+.iq-ttl{font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-light);margin-bottom:18px;}
+.iq-bar-row{margin-bottom:12px;}
+.iq-bar-lbl{display:flex;justify-content:space-between;font-size:.72rem;color:rgba(255,255,255,.65);margin-bottom:5px;font-weight:500;}
+.iq-bar-track{height:5px;background:rgba(255,255,255,.07);border-radius:100px;overflow:hidden;}
+.iq-bar-fill{height:100%;border-radius:100px;}
+
+/* PEEK / COMING SOON */
+.peek-s{padding:96px 56px;background:var(--charcoal);position:relative;overflow:hidden;text-align:center;}
+.peek-s::before{content:'';position:absolute;top:-180px;left:50%;transform:translateX(-50%);width:800px;height:440px;background:radial-gradient(ellipse,rgba(139,37,0,.1) 0%,transparent 65%);pointer-events:none;}
+.peek-h2{font-family:var(--ff-display);font-size:clamp(2rem,3.5vw,3rem);font-weight:900;color:var(--white);letter-spacing:-.03em;line-height:1.1;margin-bottom:14px;}
+.peek-h2 em{color:var(--brick-glow);font-style:italic;}
+.peek-sub{font-size:.97rem;color:rgba(255,253,249,.45);max-width:540px;margin:0 auto 52px;font-weight:300;line-height:1.7;}
+.peek-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;max-width:920px;margin:0 auto;}
+.peek-card{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:20px;padding:26px;position:relative;overflow:hidden;transition:border-color .3s,transform .3s;text-align:left;}
+.peek-card:hover{border-color:rgba(139,37,0,.3);transform:translateY(-3px);}
+.peek-screen{height:120px;border-radius:12px;margin-bottom:14px;background:rgba(0,0,0,.3);overflow:hidden;position:relative;}
+.peek-blur{position:absolute;inset:0;display:flex;flex-direction:column;gap:5px;padding:10px;filter:blur(5px);}
+.ps-r{height:9px;background:rgba(255,255,255,.09);border-radius:4px;}
+.ps-r.w{width:80%;}
+.ps-r.m{width:55%;}
+.ps-r.s{width:35%;}
+.ps-r.a{background:rgba(139,37,0,.35);}
+.ps-b{height:35px;background:rgba(139,37,0,.18);border-radius:7px;}
+.peek-lock{position:absolute;top:10px;right:10px;font-size:13px;opacity:.35;}
+.peek-card-emoji{font-size:1.6rem;margin-bottom:10px;}
+.peek-card-title{font-weight:700;font-size:.88rem;color:rgba(255,255,255,.88);margin-bottom:5px;}
+.peek-card-text{font-size:.74rem;color:rgba(255,255,255,.38);line-height:1.55;font-weight:300;}
+.peek-chip{display:inline-block;margin-top:10px;font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brick-glow);border:1px solid rgba(232,115,58,.22);padding:3px 9px;border-radius:100px;}
+
+/* WAITLIST */
+.wl-s{background:var(--brick-deep);padding:96px 56px;text-align:center;position:relative;overflow:hidden;}
+.wl-s::before{content:'';position:absolute;top:-130px;left:50%;transform:translateX(-50%);width:700px;height:380px;background:radial-gradient(ellipse,rgba(232,115,58,.12) 0%,transparent 70%);pointer-events:none;}
+.wl-h2{font-family:var(--ff-display);font-size:clamp(2rem,4vw,3.3rem);font-weight:900;color:var(--white);letter-spacing:-.03em;line-height:1.1;margin-bottom:12px;}
+.wl-h2 em{color:var(--brick-glow);font-style:italic;}
+.wl-sub{font-size:.95rem;color:rgba(255,253,249,.5);margin-bottom:40px;font-weight:300;}
+.wl-form{display:flex;gap:12px;max-width:450px;margin:0 auto 18px;}
+.wl-inp{flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:100px;padding:14px 20px;color:#fff;font-family:var(--ff-body);font-size:.92rem;outline:none;cursor:text;}
+.wl-inp::placeholder{color:rgba(255,255,255,.3);}
+.wl-note{font-size:.7rem;color:rgba(255,253,249,.28);}
+
+/* FOOTER */
+footer{background:var(--charcoal);padding:40px 56px;display:flex;justify-content:space-between;align-items:center;}
+.f-logo{font-family:var(--ff-display);font-weight:900;font-size:1.35rem;color:var(--white);}
+.f-logo span{color:var(--brick-glow);}
+.f-text{font-size:.76rem;color:rgba(255,253,249,.25);}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  nav{padding:14px 20px;}
+  .n-links{display:none;}
+  .hero{grid-template-columns:1fr;padding:110px 22px 60px;gap:50px;}
+  .hero-right{order:-1;}
+  .phone-wrap{width:240px;}
+  .pb1,.pb2,.pb3{display:none;}
+  .chat-section,.practice-s,.how-s,.notice-s,.peek-s,.wl-s{padding:60px 22px;}
+  .chat-grid{grid-template-columns:1fr;gap:40px;}
+  .how-grid{grid-template-columns:1fr;}
+  .notice-grid{grid-template-columns:1fr;gap:40px;}
+  .peek-grid{grid-template-columns:1fr 1fr;}
+  .wl-form{flex-direction:column;}
+  footer{flex-direction:column;gap:12px;text-align:center;padding:28px 22px;}
+  body{cursor:auto;}
+  .c-dot,.c-ring{display:none;}
+}
+@media(max-width:560px){
+  .peek-grid{grid-template-columns:1fr;}
+  .p-options{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="c-dot" id="cDot"></div>
+<div class="c-ring" id="cRing"></div>
+
+<!-- NAV -->
+<nav id="topNav">
+  <div class="n-logo">Syn<span>IQ</span></div>
+  <ul class="n-links">
+    <li><a href="#chatbot">Try It</a></li>
+    <li><a href="#practice">Practice</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#waitlist" class="n-cta">Early Access</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div><div class="hero-lines"></div>
+  <div class="fade-up">
+    <div class="hero-tag"><div class="tag-dot"></div>Intelligent Learning · Every Child</div>
+    <h1 class="hero-h1">The tutor that<br><em>pays <span class="uw">attention</span></em><br>to you.</h1>
+    <p class="hero-sub">SynIQ doesn't just answer questions. It notices how you think, adapts to where you are right now, and finds the exact way to explain things so <em>they actually stick</em>.</p>
+    <div class="hero-actions">
+      <button class="btn-p" onclick="document.getElementById('chatbot').scrollIntoView({behavior:'smooth'})">Ask SynIQ anything →</button>
+      <button class="btn-g" onclick="document.getElementById('practice').scrollIntoView({behavior:'smooth'})">▶ Try a practice question</button>
+    </div>
+    <div class="hero-stats">
+      <div><span class="hstat-n">Any</span><span class="hstat-l">Subject · Grade</span></div>
+      <div><span class="hstat-n">6</span><span class="hstat-l">Ways to explain</span></div>
+      <div><span class="hstat-n">Always</span><span class="hstat-l">Adapting to you</span></div>
+    </div>
+  </div>
+  <div class="hero-right fade-up">
+    <div class="phone-wrap">
+      <div class="phone-glow"></div>
+      <div class="pbadge pb1"><div class="bdot" style="background:#C9952A"></div>Adapting explanation…</div>
+      <div class="pbadge pb2"><div class="bdot" style="background:#4ade80"></div>Understands now ✓</div>
+      <div class="pbadge pb3"><div class="bdot" style="background:#8B2500"></div>Visual mode active</div>
+      <div class="phone-shell">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="p-ch"><div class="p-av">🤖</div><div><p>SynIQ Mentor</p><p>Always learning from you</p></div><div class="p-online"></div></div>
+          <div class="p-msgs">
+            <div class="pmb"><div class="p-tag">SYNIQ</div>What would you like to learn today?</div>
+            <div class="pmu">fractions</div>
+            <div class="pmb">A pizza is cut into 4 pieces. You take 1. What fraction is that?</div>
+            <div class="pmu">2/4</div>
+            <div class="pmb"><div class="p-tag">VISUAL MODE</div>Let me show you what 2/4 looks like vs 1/4 👀</div>
+          </div>
+          <div class="p-input"><div class="p-inp-mock">Ask anything…</div><div class="p-send">➤</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LIVE CHATBOT -->
+<section class="chat-section" id="chatbot">
+  <div class="chat-grid container">
+    <div class="chat-info fade-up">
+      <div class="s-label" style="color:var(--gold-light)"><span style="background:var(--gold-light);width:28px;height:1px;display:block"></span>Live Demo</div>
+      <h2 class="chat-h2">Ask anything.<br><em>SynIQ figures<br>out the rest.</em></h2>
+      <p class="chat-desc">You don't need to tell SynIQ what kind of learner you are. Just ask — and it pays attention to everything between the words.</p>
+      <div class="vprop"><div class="vprop-icon">💡</div><div><div class="vprop-title">Explains until it clicks</div><p class="vprop-text">If the first explanation doesn't land, SynIQ tries something completely different — analogy, story, visual, step-by-step.</p></div></div>
+      <div class="vprop"><div class="vprop-icon">👁️</div><div><div class="vprop-title">Shows you where you went wrong</div><p class="vprop-text">When you get something wrong, it shows you visually — what you thought vs. what's correct — so you understand the gap instantly.</p></div></div>
+      <div class="vprop"><div class="vprop-icon">🧩</div><div><div class="vprop-title">Knows before you say it</div><p class="vprop-text">SynIQ suggests your next question before you even type it. The more you use it, the more it seems to know what you need next.</p></div></div>
+      <div class="vprop"><div class="vprop-icon">∞</div><div><div class="vprop-title">Every subject. Every level.</div><p class="vprop-text">Maths, science, history, grammar, geography — SynIQ explains it all and adjusts its depth to exactly where you are right now.</p></div></div>
+    </div>
+
+    <!-- LIVE CHAT -->
+    <div class="live-wrap fade-up">
+      <div class="lv-header">
+        <div class="lv-av">🤖</div>
+        <div><div class="lv-title">SynIQ Mentor</div><div class="lv-sub">Adapting · Every message</div></div>
+        <div class="lv-live"><div class="sdot"></div>Live</div>
+      </div>
+      <div class="lv-msgs" id="lvMsgs">
+        <div class="bot-msg-wrap">
+          <div class="bot-lbl">SYNIQ</div>
+          <div class="bot-bubble">Hello! I'm SynIQ — your personal learning mentor. Ask me absolutely anything — any subject, any topic, any level. I'll find the right way to explain it for you. 🎯</div>
+        </div>
+      </div>
+      <div class="prompts-bar">
+        <div class="prompts-label">Try asking →</div>
+        <div class="prompts-row" id="promptsRow">
+          <button class="prompt-btn" onclick="sendPrompt(this)">What is angle of elevation?</button>
+          <button class="prompt-btn" onclick="sendPrompt(this)">Explain photosynthesis</button>
+          <button class="prompt-btn" onclick="sendPrompt(this)">Help me with fractions</button>
+          <button class="prompt-btn" onclick="sendPrompt(this)">What is gravity?</button>
+          <button class="prompt-btn" onclick="sendPrompt(this)">How does the heart work?</button>
+        </div>
+      </div>
+      <div class="lv-input">
+        <textarea id="chat-input" placeholder="Ask anything…" rows="1"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRACTICE SECTION -->
+<section class="practice-s" id="practice">
+  <div class="practice-inner">
+    <div class="s-label fade-up" style="color:var(--gold-light)"><span style="background:var(--gold-light);width:28px;height:1px;display:block"></span>Live Practice</div>
+    <h2 class="fade-up" style="font-family:var(--ff-display);font-size:clamp(2rem,3.5vw,2.9rem);font-weight:900;color:var(--white);letter-spacing:-.03em;line-height:1.1;margin-bottom:12px">
+      Get it wrong?<br><em style="color:var(--brick-glow)">SynIQ shows you <em style="font-style:normal">exactly</em> why.</em>
+    </h2>
+    <p class="fade-up" style="font-size:.95rem;color:rgba(255,253,249,.45);font-weight:300;line-height:1.7;margin-bottom:8px">
+      Answer a question. If you get it wrong, SynIQ instantly shows you what your answer looks like visually — then what the correct answer looks like. You will never make the same mistake twice.
+    </p>
+
+    <!-- Topic picker -->
+    <div class="topic-row fade-up" id="topicRow"></div>
+
+    <!-- Progress -->
+    <div class="p-progress fade-up"><div class="p-progress-fill" id="pProgressFill" style="width:0%"></div></div>
+
+    <!-- Question card -->
+    <div class="pq-card fade-up" id="pqCard">
+      <div class="pq-label" id="pqLabel">Loading…</div>
+      <div class="pq-text" id="pqText"></div>
+      <div class="pq-visual" id="pqVisual"></div>
+      <div class="p-options" id="pOptions"></div>
+      <div id="pVisExp"></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-s" id="how">
+  <div class="container">
+    <div class="s-label fade-up">How it works</div>
+    <h2 class="how-h2 fade-up">Three things every good<br>teacher does. <em>SynIQ does<br>them automatically.</em></h2>
+    <div class="how-grid fade-up">
+      <div class="how-card"><div class="how-num">01</div><div class="how-icon">🎯</div><div class="how-title">Meets you where you are</div><p class="how-text">SynIQ pays attention to how you respond, how quickly you grasp things, and what kind of explanations seem to resonate — then adjusts everything to fit.</p></div>
+      <div class="how-card"><div class="how-num">02</div><div class="how-icon">🔄</div><div class="how-title">Tries a different way</div><p class="how-text">If you don't get it the first time, SynIQ reaches for something completely different — a real-life story, a visual diagram, a step-by-step walkthrough — until something clicks.</p></div>
+      <div class="how-card"><div class="how-num">03</div><div class="how-icon">📸</div><div class="how-title">Shows you the gap</div><p class="how-text">When you get something wrong, SynIQ shows you the difference visually — what you thought and what's correct — so the right answer is impossible to forget.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT YOU'LL NOTICE -->
+<section class="notice-s" id="science">
+  <div class="notice-grid">
+    <div class="fade-up">
+      <div class="s-label">What you'll notice</div>
+      <h2 class="notice-h2">Something feels<br><em>different</em> about<br>how it teaches.</h2>
+      <p style="font-size:.93rem;color:var(--stone);line-height:1.75;font-weight:300;margin-bottom:32px">Most people who use SynIQ can't fully explain why it works so well. They just know that explanations seem to arrive in exactly the right form, at exactly the right moment.</p>
+      <div class="nbullet"><div class="nb-icon">🎯</div><div><div class="nb-title">It feels like it knows you</div><p class="nb-text">After just a few exchanges, SynIQ seems to understand how you like things explained — without you ever having to say so.</p></div></div>
+      <div class="nbullet"><div class="nb-icon">🔄</div><div><div class="nb-title">It never says the same thing twice</div><p class="nb-text">When something doesn't click, SynIQ reaches for a completely different approach. Every retry feels fresh and purposeful.</p></div></div>
+      <div class="nbullet"><div class="nb-icon">📐</div><div><div class="nb-title">The difficulty always feels just right</div><p class="nb-text">Questions and explanations never feel too easy or overwhelming. SynIQ keeps you engaged and slightly stretched — without frustration.</p></div></div>
+      <div class="nbullet"><div class="nb-icon">💡</div><div><div class="nb-title">Things stick in a way they haven't before</div><p class="nb-text">Students who use SynIQ regularly find that concepts don't just make sense in the moment — they actually stay.</p></div></div>
+      <p style="font-size:.78rem;color:var(--stone-light);font-style:italic;margin-top:28px;line-height:1.6;font-weight:300">We're not revealing the details of how this works yet — but you'll feel it the moment you start talking to it.</p>
+    </div>
+    <div class="fade-up">
+      <div class="iq-panel">
+        <div class="iq-ttl">Live session · Arjun K. · Angle of Elevation</div>
+        <div class="iq-bar-row"><div class="iq-bar-lbl"><span>First explanation</span><span style="color:#4ade80">✓ Done</span></div><div class="iq-bar-track"><div class="iq-bar-fill" style="width:100%;background:linear-gradient(90deg,#4ade80,#86efac)"></div></div></div>
+        <div class="iq-bar-row"><div class="iq-bar-lbl"><span>Real-life analogy tried</span><span style="color:#4ade80">✓ Done</span></div><div class="iq-bar-track"><div class="iq-bar-fill" style="width:100%;background:linear-gradient(90deg,#4ade80,#86efac)"></div></div></div>
+        <div class="iq-bar-row"><div class="iq-bar-lbl"><span>Visual comparison shown</span><span style="color:var(--brick-glow)">→ Active</span></div><div class="iq-bar-track"><div class="iq-bar-fill" style="width:65%;background:linear-gradient(90deg,var(--brick),var(--brick-glow))"></div></div></div>
+        <div class="iq-bar-row" style="opacity:.35"><div class="iq-bar-lbl"><span>Step-by-step walkthrough</span><span>Waiting</span></div><div class="iq-bar-track"><div class="iq-bar-fill" style="width:0%"></div></div></div>
+        <div style="margin-top:14px;padding:11px 13px;background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.13);border-radius:11px"><div style="font-size:.6rem;font-weight:700;letter-spacing:.08em;color:#4ade80;margin-bottom:3px">FINDING THE RIGHT WAY</div><div style="font-size:.72rem;color:rgba(255,255,255,.55);line-height:1.5">SynIQ is working through its approaches until something clicks for Arjun specifically.</div></div>
+      </div>
+      <div class="iq-panel">
+        <div class="iq-ttl">What students say</div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="padding:13px;background:rgba(255,255,255,.04);border-radius:12px;border-left:2px solid var(--brick)"><p style="font-size:.78rem;color:rgba(255,255,255,.65);line-height:1.6;font-style:italic;margin-bottom:7px">"It gave me three different explanations until one actually made sense. My teacher has never done that."</p><p style="font-size:.62rem;color:rgba(255,255,255,.28);font-weight:600">Priya, Class 8 · Mumbai</p></div>
+          <div style="padding:13px;background:rgba(255,255,255,.04);border-radius:12px;border-left:2px solid var(--gold)"><p style="font-size:.78rem;color:rgba(255,255,255,.65);line-height:1.6;font-style:italic;margin-bottom:7px">"It showed me exactly what I was thinking wrong and what was correct. I've never forgotten it since."</p><p style="font-size:.62rem;color:rgba(255,255,255,.28);font-weight:600">Arjun, Class 10 · Delhi</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SNEAK PEEK -->
+<section class="peek-s" id="peek">
+  <div class="container">
+    <div class="s-label fade-up" style="justify-content:center;color:var(--gold-light)"><span style="background:var(--gold-light);width:28px;height:1px;display:block"></span>What's coming</div>
+    <h2 class="peek-h2 fade-up">The mentor is just<br>the <em>beginning</em>.</h2>
+    <p class="peek-sub fade-up">We're building a complete learning universe. We're not showing it all yet — but here's a glimpse.</p>
+    <div class="peek-grid fade-up">
+      <div class="peek-card"><div class="peek-screen"><div class="peek-blur"><div class="ps-r w"></div><div class="ps-b"></div><div class="ps-r m a"></div><div class="ps-r s"></div></div></div><div class="peek-lock">🔒</div><div class="peek-card-emoji">🎮</div><div class="peek-card-title">Learning as Play</div><p class="peek-card-text">The full curriculum delivered through activities that feel nothing like studying. Every concept, every grade.</p><div class="peek-chip">Coming soon</div></div>
+      <div class="peek-card"><div class="peek-screen"><div class="peek-blur"><div class="ps-r s a"></div><div style="display:flex;gap:5px"><div style="flex:1;height:50px;background:rgba(139,37,0,.25);border-radius:7px"></div><div style="flex:1;height:50px;background:rgba(74,222,128,.12);border-radius:7px"></div></div><div class="ps-r w"></div></div></div><div class="peek-lock">🔒</div><div class="peek-card-emoji">📊</div><div class="peek-card-title">Progress Intelligence</div><p class="peek-card-text">Deep visibility into how your child learns, grows, and where they need support.</p><div class="peek-chip">Coming soon</div></div>
+      <div class="peek-card"><div class="peek-screen"><div class="peek-blur"><div class="ps-r w"></div><div style="display:flex;gap:4px;flex-wrap:wrap"><div style="width:35px;height:35px;background:rgba(201,149,42,.18);border-radius:7px"></div><div style="width:35px;height:35px;background:rgba(139,37,0,.22);border-radius:7px"></div><div style="width:35px;height:35px;background:rgba(74,222,128,.12);border-radius:7px"></div></div><div class="ps-r m a"></div></div></div><div class="peek-lock">🔒</div><div class="peek-card-emoji">🏆</div><div class="peek-card-title">Motivation Engine</div><p class="peek-card-text">A complete reward system that makes coming back every day feel like a choice, not a chore.</p><div class="peek-chip">Coming soon</div></div>
+    </div>
+    <p class="fade-up" style="text-align:center;font-size:.77rem;color:rgba(255,253,249,.25);font-style:italic;margin-top:36px">Early access members get the full experience first.</p>
+  </div>
+</section>
+
+<!-- WAITLIST -->
+<section class="wl-s" id="waitlist">
+  <h2 class="wl-h2 fade-up">Be first to<br>experience <em>SynIQ</em>.</h2>
+  <p class="wl-sub fade-up">Limited early access. One email when we launch.</p>
+  <div class="wl-form fade-up">
+    <input class="wl-inp" type="email" id="wlEmail" placeholder="your@email.com">
+    <button class="btn-p" onclick="joinWL()" style="white-space:nowrap;flex-shrink:0">Join Waitlist →</button>
+  </div>
+  <p class="wl-note fade-up">No spam. No sharing. Just one email when it's ready.</p>
+</section>
+
+<footer>
+  <div class="f-logo">Syn<span>IQ</span></div>
+  <p class="f-text">© 2025 SynIQ · All rights reserved</p>
+  <p class="f-text" style="font-style:italic;color:rgba(255,253,249,.14)">The tutor that pays attention.</p>
+</footer>
+
+<script>
+// ── BACKEND URL — your Vercel proxy ──────────────────────────
+const PROXY = 'https://syniq-backend.vercel.app/api/chat'
+
+// ── CURSOR ───────────────────────────────────────────────────
+const cDot=document.getElementById('cDot'),cRing=document.getElementById('cRing')
+let mx=0,my=0,rx=0,ry=0
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cDot.style.left=mx+'px';cDot.style.top=my+'px'})
+;(function loop(){rx+=(mx-rx)*.11;ry+=(my-ry)*.11;cRing.style.left=rx+'px';cRing.style.top=ry+'px';requestAnimationFrame(loop)})()
+document.querySelectorAll('button,a,.prompt-btn,.topic-btn,.p-opt').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cDot.style.width='13px';cDot.style.height='13px';cRing.style.width='46px';cRing.style.height='46px'})
+  el.addEventListener('mouseleave',()=>{cDot.style.width='8px';cDot.style.height='8px';cRing.style.width='32px';cRing.style.height='32px'})
+})
+
+// ── SCROLL REVEAL ─────────────────────────────────────────────
+const obs=new IntersectionObserver(entries=>{entries.forEach((e,i)=>{if(e.isIntersecting)setTimeout(()=>e.target.classList.add('visible'),i*70)})},{threshold:.08})
+document.querySelectorAll('.fade-up').forEach(el=>obs.observe(el))
+
+// ── NAV SHRINK ────────────────────────────────────────────────
+window.addEventListener('scroll',()=>{document.getElementById('topNav').style.padding=window.scrollY>40?'12px 56px':'20px 56px'})
+
+// ─────────────────────────────────────────────────────────────
+// CHATBOT
+// ─────────────────────────────────────────────────────────────
+let chatHistory=[], isTyping=false, explainDepth=0, lastTopic='', waitingUnderstood=false
+
+async function callProxy(system, messages, mode='chat') {
+  const res = await fetch(PROXY, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ system, messages: messages.slice(-14), mode })
+  })
+  if(res.status===429){ return "You're going fast! Give me a moment 😊" }
+  const data = await res.json()
+  return data.reply || "Let me think about that — ask me again!"
+}
+
+function buildSys(depth) {
+  const d = depth===0
+    ? 'Give a SHORT clear explanation, maximum 3 sentences. Use one simple real-life example. End with exactly ONE short question.'
+    : depth===1
+    ? 'Try a COMPLETELY different approach using a short analogy from daily life. Maximum 3 sentences. End with Did that help?'
+    : 'Use the simplest possible words. Maximum 2 sentences. One idea only.'
+  return 'You are SynIQ, a personal AI tutor for school students. STRICT RULES: Maximum 3 sentences per response. No markdown, no bold, no bullet points. No long stories. End every response with exactly ONE short question. Never say you are an AI or mention Google or Gemini. ' + d
+}
+
+function showTyping() {
+  const msgs=document.getElementById('lvMsgs')
+  window._typingEl=document.createElement('div')
+  window._typingEl.className='bot-msg-wrap'
+  window._typingEl.innerHTML='<div class="typing-wrap"><div class="td"></div><div class="td"></div><div class="td"></div></div>'
+  msgs.appendChild(window._typingEl); msgs.scrollTop=msgs.scrollHeight
+}
+function hideTyping(){if(window._typingEl){window._typingEl.remove();window._typingEl=null}}
+
+function addBotMsg(text){
+  const msgs=document.getElementById('lvMsgs')
+  const w=document.createElement('div'); w.className='bot-msg-wrap'
+  w.innerHTML=`<div class="bot-lbl">SYNIQ</div><div class="bot-bubble">${esc(text)}</div>`
+  msgs.appendChild(w); msgs.scrollTop=msgs.scrollHeight
+}
+function addUserMsg(text){
+  const msgs=document.getElementById('lvMsgs')
+  const d=document.createElement('div'); d.className='user-bubble'; d.textContent=text
+  msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight
+}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
+
+async function genSmartPrompts(reply, topic) {
+  try {
+    const r = await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({system:'Return ONLY a JSON array of 4 short follow-up questions (max 6 words each) a student might ask after this explanation. No markdown, no backticks, just the array.',
+        messages:[{role:'user',content:`Topic: ${topic}\nExplanation: ${reply.slice(0,200)}`}],mode:'prompts'})})
+    const d=await r.json()
+    const arr=JSON.parse((d.reply||'[]').replace(/```json|```/g,'').trim())
+    if(Array.isArray(arr)&&arr.length>0){
+      const row=document.getElementById('promptsRow'); row.innerHTML=''
+      arr.forEach(p=>{const b=document.createElement('button');b.className='prompt-btn';b.textContent=p;b.onclick=()=>sendPrompt(b);row.appendChild(b)})
+    }
+  } catch(e) {}
+}
+
+async function processMsg(text) {
+  if(isTyping) return
+  isTyping=true; document.getElementById('sendBtn').disabled=true
+
+  const understood=/^(yes|got it|i understand|makes sense|okay|clear|understood|yep|yeah|i get it)$/i.test(text.trim())
+  const didnt=/don.t understand|still confused|not clear|explain again|show me visually|show visually|differently|i don.t get/i.test(text)
+
+  if(waitingUnderstood){
+    waitingUnderstood=false
+    if(understood){
+      explainDepth=0; showTyping(); await sleep(500); hideTyping()
+      addBotMsg("I'm glad that clicked! 🎉 What would you like to explore next?")
+      done(); return
+    }
+    explainDepth++
+    await deeperExplain(lastTopic, explainDepth, text)
+    done(); return
+  }
+
+  if(didnt&&lastTopic){ explainDepth++; await deeperExplain(lastTopic,explainDepth,text); done(); return }
+
+  lastTopic=text.length<80?text:text.slice(0,80)
+  explainDepth=0
+  chatHistory.push({role:'user',content:text})
+  showTyping()
+  const reply=await callProxy(buildSys(0), chatHistory)
+  hideTyping()
+  chatHistory.push({role:'assistant',content:reply})
+  addBotMsg(reply)
+  await genSmartPrompts(reply, lastTopic)
+  setTimeout(()=>{addBotMsg("Did that make sense? If not, click below and I'll try a different approach 👇"); waitingUnderstood=true}, 1100)
+  done()
+}
+
+async function deeperExplain(topic, depth, userMsg) {
+  showTyping()
+  if(depth===1){
+    const reply=await callProxy(buildSys(1),[...chatHistory,{role:'user',content:`Explain "${topic}" in a completely different way using a real-life story or example.`}])
+    hideTyping(); addBotMsg(reply)
+    chatHistory.push({role:'user',content:userMsg},{role:'assistant',content:reply})
+    await genSmartPrompts(reply, topic)
+    setTimeout(()=>{addBotMsg("Did that help? Or shall I show you visually? 👇"); waitingUnderstood=true},900)
+  } else {
+    // Show visual comparison
+    hideTyping()
+    showTyping()
+    const sysV=`Generate a visual text comparison for a student who got "${topic}" wrong. Return ONLY JSON:
+{"title":"short title","wrongLabel":"What you thought","wrongVisual":"emoji/ascii diagram of wrong understanding","correctLabel":"What is actually correct","correctVisual":"emoji/ascii diagram of correct answer","keyInsight":"one sentence explaining the difference","followUp":"encouraging sentence + check question"}`
+    const raw=await callProxy(sysV,[{role:'user',content:`Topic: ${topic}. Student answer: ${userMsg}`}],'visual')
+    hideTyping()
+    try {
+      const p=JSON.parse(raw.replace(/```json|```/g,'').trim())
+      const msgs=document.getElementById('lvMsgs')
+      const w=document.createElement('div'); w.className='bot-msg-wrap'
+      w.innerHTML=`<div class="bot-lbl">SYNIQ · VISUAL EXPLANATION</div>
+        <div class="bot-bubble">Let me show you exactly what happened 👇</div>
+        <div class="vis-card" style="margin-top:8px">
+          <div class="vis-card-header wrong"><span style="font-size:1rem">✗</span><div class="vis-card-label">${esc(p.wrongLabel||'Your answer')}</div></div>
+          <div class="vis-card-body" style="font-family:var(--ff-mono);font-size:.8rem;color:#f87171;line-height:1.9;white-space:pre">${esc(p.wrongVisual||'')}</div>
+          <div class="vis-card-header correct" style="border-top:1px solid rgba(255,255,255,.05)"><span style="font-size:1rem">✓</span><div class="vis-card-label">${esc(p.correctLabel||'Correct')}</div></div>
+          <div class="vis-card-body" style="font-family:var(--ff-mono);font-size:.8rem;color:#4ade80;line-height:1.9;white-space:pre">${esc(p.correctVisual||'')}</div>
+        </div>
+        <div class="vis-insight" style="margin-top:8px">💡 ${esc(p.keyInsight||'')}</div>
+        <div class="bot-bubble" style="margin-top:8px">${esc(p.followUp||'Does that make it clearer?')}</div>`
+      msgs.appendChild(w); msgs.scrollTop=msgs.scrollHeight
+      chatHistory.push({role:'assistant',content:`[Visual shown] ${p.keyInsight||''} ${p.followUp||''}`})
+      waitingUnderstood=true
+    } catch(e){ addBotMsg(raw) }
+  }
+}
+
+function sendPrompt(btn){const t=btn.textContent.trim();btn.style.opacity='.35';btn.style.pointerEvents='none';addUserMsg(t);processMsg(t)}
+function sendMessage(){const inp=document.getElementById('chat-input');const t=inp.value.trim();if(!t||isTyping)return;inp.value='';inp.style.height='auto';addUserMsg(t);processMsg(t)}
+document.getElementById('chat-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}})
+document.getElementById('chat-input').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,96)+'px'})
+function done(){isTyping=false;document.getElementById('sendBtn').disabled=false}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+// ─────────────────────────────────────────────────────────────
+// PRACTICE — VISUAL WRONG ANSWER ENGINE
+// ─────────────────────────────────────────────────────────────
+function frac2count(f,total){const n=parseInt((f||'0').split('/')[0]);return isNaN(n)?1:Math.min(n,total)}
+
+function pizza(total,count,color){
+  const e='🍕'
+  let h=`<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:8px 0">`
+  h+=`<div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center;max-width:220px">`
+  for(let i=0;i<total;i++){const s=i<count;h+=`<div style="width:42px;height:42px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.35rem;background:${s?(color+'22'):'rgba(255,255,255,.04)'};border:${s?`2px solid ${color}`:'1.5px solid rgba(255,255,255,.08)'};${s?'transform:translateY(-2px)':''}">${e}</div>`}
+  h+=`</div>`
+  h+=`<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-family:var(--ff-mono);font-size:1.4rem;color:${color};font-weight:600">${count}</div><div style="width:44px;height:2px;background:${color};border-radius:2px"></div><div style="font-family:var(--ff-mono);font-size:1.4rem;color:${color};font-weight:600">${total}</div></div>`
+  h+=`<div style="font-size:.72rem;color:rgba(255,255,255,.35)">${count} piece${count!==1?'s':''} out of ${total} total</div>`
+  h+=`</div>`; return h
+}
+
+function bar(total,count,color){
+  const e='🍫'
+  let h=`<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:8px 0">`
+  h+=`<div style="display:flex;gap:3px">`
+  for(let i=0;i<total;i++){const s=i<count;h+=`<div style="width:38px;height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;background:${s?color+'22':'rgba(255,255,255,.04)'};border:${s?`2px solid ${color}`:'1.5px solid rgba(255,255,255,.07)'}">${e}</div>`}
+  h+=`</div>`
+  h+=`<div style="font-family:var(--ff-mono);font-size:1.3rem;color:${color};font-weight:600">${count}/${total}</div>`
+  h+=`</div>`; return h
+}
+
+function apples(count,color,label){
+  const e='🍎'
+  let h=`<div style="text-align:center;padding:8px 0">`
+  h+=`<div style="display:flex;flex-wrap:wrap;gap:4px;max-width:240px;justify-content:center;margin:0 auto">`
+  for(let i=0;i<Math.min(count,20);i++)h+=`<span style="font-size:1.3rem">${e}</span>`
+  h+=`</div>`
+  h+=`<div style="font-family:var(--ff-mono);font-size:1.3rem;color:${color};font-weight:600;margin-top:10px">${label}</div>`
+  h+=`</div>`; return h
+}
+
+function placeVal(num,hi){
+  const digits=String(num).split(''),labels=['Hundreds','Tens','Units'],colors=['#C9952A','#E8733A','#4ade80']
+  let h=`<div style="display:flex;gap:8px;justify-content:center;padding:8px 0">`
+  digits.forEach((d,i)=>{const isHL=i===hi;h+=`<div style="text-align:center"><div style="font-size:.58rem;color:${colors[i]};font-weight:700;letter-spacing:.05em;margin-bottom:4px">${labels[i]}</div><div style="width:48px;height:52px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--ff-mono);font-size:1.6rem;font-weight:700;background:${isHL?colors[i]+'22':'rgba(255,255,255,.04)'};border:${isHL?`2px solid ${colors[i]}`:'1.5px solid rgba(255,255,255,.08)'};color:${isHL?colors[i]:'rgba(255,255,255,.6)'}">${d}</div></div>`})
+  h+=`</div>`; return h
+}
+
+const TOPICS={
+  fractions:{label:'🍕 Fractions',questions:[
+    {text:'A pizza is cut into 4 equal pieces. You take 1 piece. What fraction do you have?',
+     qVis:()=>pizza(4,1,'rgba(232,115,58,.6)'),
+     opts:['1/4','2/4','1/2','3/4'],correct:0,
+     explain:(c)=>({wl:`You said ${c} — here is what that looks like`,wv:pizza(4,frac2count(c,4),'#f87171'),cl:'Correct answer is 1/4 — one piece out of four',cv:pizza(4,1,'#4ade80'),insight:'A fraction means: pieces you have ÷ total pieces. You took 1 piece from 4 total = 1/4.'})},
+    {text:'A chocolate bar has 6 equal pieces. You eat 2 pieces. What fraction did you eat?',
+     qVis:()=>bar(6,2,'rgba(232,115,58,.6)'),
+     opts:['1/6','2/6','3/6','4/6'],correct:1,
+     explain:(c)=>({wl:`You said ${c}`,wv:bar(6,frac2count(c,6),'#f87171'),cl:'Correct answer is 2/6 — two pieces out of six',cv:bar(6,2,'#4ade80'),insight:'You ate 2 pieces. The bar had 6 total. Fraction = pieces eaten ÷ total = 2/6.'})},
+    {text:'A cake has 8 equal slices. You take 3 slices. What fraction is that?',
+     qVis:()=>pizza(8,3,'rgba(232,115,58,.6)'),
+     opts:['2/8','3/8','4/8','5/8'],correct:1,
+     explain:(c)=>({wl:`You said ${c}`,wv:pizza(8,frac2count(c,8),'#f87171'),cl:'Correct answer is 3/8',cv:pizza(8,3,'#4ade80'),insight:'3 slices taken out of 8 total = 3/8. The top number = pieces you have. Bottom = total pieces.'})},
+  ]},
+  addition:{label:'➕ Addition',questions:[
+    {text:'There are 7 apples in a basket. You add 5 more. How many apples in total?',
+     qVis:()=>`<div style="display:flex;gap:16px;align-items:center;justify-content:center;flex-wrap:wrap"><div style="text-align:center"><div style="font-size:.65rem;color:rgba(255,255,255,.4);margin-bottom:6px">First group</div><div style="display:flex;flex-wrap:wrap;gap:3px;max-width:120px;justify-content:center">${'🍎'.repeat(7)}</div><div style="font-size:.78rem;color:rgba(255,255,255,.4);margin-top:5px">7 apples</div></div><div style="font-size:1.8rem;color:var(--brick-glow);font-weight:700">+</div><div style="text-align:center"><div style="font-size:.65rem;color:rgba(255,255,255,.4);margin-bottom:6px">Added</div><div style="display:flex;flex-wrap:wrap;gap:3px;max-width:100px;justify-content:center">${'🍎'.repeat(5)}</div><div style="font-size:.78rem;color:rgba(255,255,255,.4);margin-top:5px">5 more</div></div></div>`,
+     opts:['10','11','12','13'],correct:2,
+     explain:(c)=>({wl:`You said ${c} — you counted ${c} apples`,wv:apples(parseInt(c),'#f87171',`${c} ✗`),cl:'7 + 5 = 12 — count all apples together',cv:apples(12,'#4ade80','7 + 5 = 12 ✓'),insight:'Count ALL apples together: 7 in the first group + 5 in the second. Count on from 7: 8, 9, 10, 11, 12!'})},
+    {text:'24 + 13 = ?',
+     qVis:()=>`<div style="font-family:var(--ff-mono);font-size:1.4rem;text-align:center;color:rgba(255,255,255,.8)"><div style="display:inline-block;text-align:right;background:rgba(255,255,255,.05);padding:14px 22px;border-radius:14px;border:1px solid rgba(255,255,255,.1)"><div>24</div><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--brick-glow)">+</span>13</div><div style="border-top:1.5px solid rgba(255,255,255,.25);margin-top:6px;padding-top:6px;color:rgba(255,255,255,.3)">?</div></div></div>`,
+     opts:['35','36','37','38'],correct:2,
+     explain:(c)=>({wl:`You said ${c} — let me show where the mistake happened`,
+       wv:`<div style="font-family:var(--ff-mono);font-size:1.1rem;text-align:center;padding:10px 0"><div style="display:inline-block;text-align:right;background:rgba(220,38,38,.1);padding:14px 20px;border-radius:12px;border:1px solid rgba(220,38,38,.3)"><div style="font-size:.65rem;color:rgba(255,255,255,.35);margin-bottom:4px;display:flex;gap:12px;justify-content:flex-end"><span>TENS</span><span>UNITS</span></div><div style="display:flex;gap:12px;justify-content:flex-end"><span>2</span><span>4</span></div><div style="display:flex;gap:12px;justify-content:flex-end;align-items:center"><span style="color:var(--brick-glow);margin-right:4px">+</span><span>1</span><span>3</span></div><div style="border-top:1px solid rgba(220,38,38,.4);margin-top:6px;padding-top:6px;color:#f87171;font-weight:700">${c} ✗</div></div></div>`,
+       cl:'24 + 13 = 37 — add units then tens',
+       cv:`<div style="font-family:var(--ff-mono);font-size:1.1rem;text-align:center;padding:10px 0"><div style="display:inline-block;text-align:right;background:rgba(22,163,74,.1);padding:14px 20px;border-radius:12px;border:1px solid rgba(22,163,74,.3)"><div style="font-size:.65rem;color:rgba(255,255,255,.35);margin-bottom:4px;display:flex;gap:12px;justify-content:flex-end"><span>TENS</span><span>UNITS</span></div><div style="display:flex;gap:12px;justify-content:flex-end"><span>2</span><span style="color:#4ade80">4</span></div><div style="display:flex;gap:12px;justify-content:flex-end;align-items:center"><span style="color:var(--brick-glow);margin-right:4px">+</span><span>1</span><span style="color:#4ade80">3</span></div><div style="font-size:.62rem;color:rgba(255,255,255,.3);text-align:right;margin-top:2px">4+3=7 | 20+10=30</div><div style="border-top:1px solid rgba(22,163,74,.4);margin-top:4px;padding-top:4px;color:#4ade80;font-weight:700">37 ✓</div></div></div>`,
+       insight:'Add units first: 4+3=7. Then add tens: 20+10=30. Put together: 30+7=37!'})},
+  ]},
+  placeValue:{label:'🔢 Place Value',questions:[
+    {text:'In the number 347, what is the VALUE of the digit 4?',
+     qVis:()=>placeVal(347,1),
+     opts:['4','40','400','4000'],correct:1,
+     explain:(c)=>({wl:`You said ${c} — the 4 is NOT in that position`,wv:placeVal(347,c==='4'?2:c==='400'?0:1),cl:'The 4 is in the TENS place — its value is 40',cv:placeVal(347,1),insight:'347 = 300 + 40 + 7. The 3 is Hundreds, 4 is Tens (=40), 7 is Units.'})},
+    {text:'What is the place value of 6 in the number 562?',
+     qVis:()=>placeVal(562,1),
+     opts:['6','60','600','6000'],correct:1,
+     explain:(c)=>({wl:`You said ${c}`,wv:placeVal(562,c==='6'?2:c==='600'?0:1),cl:'6 is in the TENS place — its value is 60',cv:placeVal(562,1),insight:'562 = 500 + 60 + 2. The digit 6 is in the tens column, so its value is 60.'})},
+  ]},
+  shapes:{label:'🔺 Shapes',questions:[
+    {text:'How many sides does a triangle have?',
+     qVis:()=>`<svg width="120" height="110" viewBox="0 0 120 110"><polygon points="60,8 112,100 8,100" fill="rgba(139,37,0,.18)" stroke="#E8733A" stroke-width="2.5"/><text x="60" y="65" text-anchor="middle" fill="rgba(255,255,255,.5)" font-size="12" font-family="DM Sans">?</text></svg>`,
+     opts:['2 sides','3 sides','4 sides','5 sides'],correct:1,
+     explain:(c)=>({
+       wl:`You said ${c}`,
+       wv:`<div style="text-align:center;padding:10px 0"><svg width="110" height="100" viewBox="0 0 110 100"><polygon points="${genPolygon(parseInt(c))}" fill="rgba(220,38,38,.12)" stroke="#f87171" stroke-width="2"/></svg><div style="font-size:.78rem;color:#f87171;margin-top:4px">This is what ${c} looks like</div></div>`,
+       cl:'A triangle has exactly 3 sides',
+       cv:`<div style="text-align:center;padding:10px 0"><svg width="120" height="110" viewBox="0 0 120 110"><polygon points="60,8 112,100 8,100" fill="rgba(22,163,74,.15)" stroke="#4ade80" stroke-width="2.5"/><text x="28" y="62" fill="#4ade80" font-size="10" font-family="DM Sans">side 1</text><text x="70" y="62" fill="#4ade80" font-size="10" font-family="DM Sans">side 2</text><text x="44" y="108" fill="#4ade80" font-size="10" font-family="DM Sans">side 3</text></svg><div style="font-size:.78rem;color:#4ade80;margin-top:4px">Triangle = 3 sides ✓</div></div>`,
+       insight:'TRI = three! A triangle always has 3 sides and 3 corners. Count the lines connecting the corners.'})},
+    {text:'How many sides does a rectangle have?',
+     qVis:()=>`<svg width="140" height="90" viewBox="0 0 140 90"><rect x="10" y="15" width="120" height="60" fill="rgba(139,37,0,.15)" stroke="#E8733A" stroke-width="2"/></svg>`,
+     opts:['2 sides','3 sides','4 sides','6 sides'],correct:2,
+     explain:(c)=>({wl:`You said ${c}`,
+       wv:`<div style="text-align:center;padding:8px 0;font-size:.8rem;color:#f87171">${c} is not correct for a rectangle</div>`,
+       cl:'A rectangle has 4 sides — 2 long and 2 short',
+       cv:`<div style="text-align:center;padding:8px 0"><svg width="140" height="90" viewBox="0 0 140 90"><rect x="10" y="15" width="120" height="60" fill="rgba(22,163,74,.12)" stroke="#4ade80" stroke-width="2"/><text x="70" y="12" text-anchor="middle" fill="#4ade80" font-size="10">side 1</text><text x="70" y="88" text-anchor="middle" fill="#4ade80" font-size="10">side 3</text><text x="4" y="50" fill="#4ade80" font-size="10">2</text><text x="132" y="50" fill="#4ade80" font-size="10">4</text></svg><div style="font-size:.78rem;color:#4ade80">4 sides ✓</div></div>`,
+       insert:'A rectangle has 4 sides: top, bottom, left, right. Count the edges!'})},
+  ]},
+}
+
+function genPolygon(n){
+  const pts=[]
+  for(let i=0;i<Math.min(n,8);i++){const a=(i/Math.min(n,8))*2*Math.PI-Math.PI/2;pts.push(`${55+42*Math.cos(a)},${50+42*Math.sin(a)}`)}
+  return pts.join(' ')
+}
+
+// Practice engine
+let pTopic='fractions', pQIdx=0, pAnswered=false
+
+function initPractice(){
+  const row=document.getElementById('topicRow'); row.innerHTML=''
+  Object.entries(TOPICS).forEach(([k,v])=>{
+    const b=document.createElement('button'); b.className='topic-btn'+(k===pTopic?' tp-active':'')
+    b.textContent=v.label; b.onclick=()=>switchPTopic(k); row.appendChild(b)
+  })
+  renderPQ()
+}
+
+function switchPTopic(k){
+  pTopic=k; pQIdx=0; pAnswered=false
+  document.querySelectorAll('.topic-btn').forEach(b=>{b.classList.toggle('tp-active',b.textContent===TOPICS[k].label)})
+  renderPQ()
+}
+
+function renderPQ(){
+  const t=TOPICS[pTopic]; const q=t.questions[pQIdx]; const total=t.questions.length
+  pAnswered=false
+  document.getElementById('pProgressFill').style.width=`${(pQIdx/total)*100}%`
+  document.getElementById('pqLabel').textContent=`${t.label} · Question ${pQIdx+1} of ${total}`
+  document.getElementById('pqText').textContent=q.text
+  document.getElementById('pqVisual').innerHTML=q.qVis()
+  document.getElementById('pOptions').innerHTML=q.opts.map((o,i)=>`<button class="p-opt" onclick="checkPAnswer(${i},'${o}')">${o}</button>`).join('')
+  document.getElementById('pVisExp').innerHTML=''
+}
+
+function checkPAnswer(idx, val){
+  if(pAnswered) return; pAnswered=true
+  const q=TOPICS[pTopic].questions[pQIdx]
+  const right=idx===q.correct
+  document.querySelectorAll('.p-opt').forEach((b,i)=>{b.disabled=true;if(i===q.correct)b.classList.add('p-correct');if(i===idx&&!right)b.classList.add('p-wrong')})
+  const exp=document.getElementById('pVisExp')
+  if(right){
+    exp.innerHTML=`<div class="p-celebrate"><div style="font-size:2.5rem;margin-bottom:8px">🎉</div><div style="font-family:var(--ff-display);font-size:1.2rem;color:#4ade80;margin-bottom:5px">Correct!</div><div style="font-size:.82rem;color:rgba(255,255,255,.45)">Well done — you got it right!</div></div>`
+  } else {
+    const e=q.explain(val)
+    exp.innerHTML=`<div class="p-vis-exp">
+      <div class="p-vh wh"><span style="font-size:1.1rem">✗</span><div class="p-vh-lbl">${e.wl||'Your answer'}</div></div>
+      <div class="p-vb">${e.wv}</div>
+      <div class="p-vh ch" style="border-top:1px solid rgba(255,255,255,.05)"><span style="font-size:1.1rem">✓</span><div class="p-vh-lbl">${e.cl}</div></div>
+      <div class="p-vb">${e.cv}</div>
+      <div class="p-vb" style="padding-top:0"><div class="p-insight">💡 ${e.insight||e.insert||''}</div></div>
+    </div>`
+  }
+  const hasNext=pQIdx+1<TOPICS[pTopic].questions.length
+  exp.innerHTML+=`<button class="p-next" onclick="${hasNext?'nextPQ()':'restartP()'}">${hasNext?'Next Question →':'🔄 Try Again'}</button>`
+}
+
+function nextPQ(){pQIdx++;renderPQ()}
+function restartP(){pQIdx=0;renderPQ()}
+
+// WAITLIST
+function joinWL(){
+  const e=document.getElementById('wlEmail').value.trim()
+  if(!e||!e.includes('@')){alert('Please enter a valid email!');return}
+  event.target.textContent="✓ You're on the list!"
+  event.target.style.background='#166534'
+  event.target.disabled=true
+  document.getElementById('wlEmail').disabled=true
+}
+
+// INIT
+initPractice()
+</script>
+</body>
+</html>
