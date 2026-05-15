@@ -1,4 +1,4 @@
-// api/chat.js — SynIQ Backend using Google Gemini
+// api/chat.js — SynIQ Backend
 const rateMap = new Map()
 
 function checkRate(ip) {
@@ -29,9 +29,10 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'messages required' })
   }
 
-  const geminiMessages = messages.slice(-10).filter(m => m.role && m.content).map(m => ({
+  // Keep only last 6 messages and cap content length to reduce tokens
+  const geminiMessages = messages.slice(-6).filter(m => m.role && m.content).map(m => ({
     role: m.role === 'user' ? 'user' : 'model',
-    parts: [{ text: String(m.content).slice(0, 2000) }]
+    parts: [{ text: String(m.content).slice(0, 800) }]
   }))
 
   if (geminiMessages.length === 0 || geminiMessages[0].role !== 'user') {
@@ -39,13 +40,15 @@ module.exports = async function handler(req, res) {
   }
 
   const GEMINI_KEY = process.env.GEMINI_API_KEY
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`
 
-  // gemini-2.0-flash-lite is the fastest available model
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_KEY}`
-
-  // Abort after 12 seconds so Vercel doesn't timeout silently
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 12000)
+  const timer = setTimeout(() => controller.abort(), 20000)
+
+  // Keep system prompt very short to reduce input tokens
+  const shortSystem = system
+    ? String(system).slice(0, 300)
+    : 'You are SynIQ, a school tutor. Max 2 sentences. Simple words. End with one question. Never mention AI or Gemini.'
 
   try {
     const apiRes = await fetch(url, {
@@ -54,11 +57,11 @@ module.exports = async function handler(req, res) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         system_instruction: {
-          parts: [{ text: String(system || 'You are SynIQ, a warm personal AI tutor. Never say you are an AI or mention Google or Gemini. You are SynIQ. Maximum 3 sentences per response.').slice(0, 2000) }]
+          parts: [{ text: shortSystem }]
         },
         contents: geminiMessages,
         generationConfig: {
-          maxOutputTokens: mode === 'prompts' ? 150 : 400,
+          maxOutputTokens: mode === 'prompts' ? 120 : 250,
           temperature: 0.7
         }
       })
@@ -73,13 +76,13 @@ module.exports = async function handler(req, res) {
     }
 
     const data = await apiRes.json()
-    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Let me think about that — ask me again!'
+    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Ask me again!'
     return res.status(200).json({ reply })
 
   } catch (err) {
     clearTimeout(timer)
     if (err.name === 'AbortError') {
-      return res.status(504).json({ error: 'Request timed out — please try again!' })
+      return res.status(504).json({ error: 'Took too long — please try again!' })
     }
     console.error('Proxy error:', err)
     return res.status(500).json({ error: 'Server error' })
