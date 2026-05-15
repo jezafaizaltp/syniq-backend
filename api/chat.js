@@ -1,4 +1,4 @@
-// api/chat.js — SynIQ Backend using Google Gemini (Free)
+// api/chat.js — SynIQ Backend using Google Gemini
 const rateMap = new Map()
 
 function checkRate(ip) {
@@ -24,14 +24,14 @@ module.exports = async function handler(req, res) {
     try { body = JSON.parse(body) } catch { return res.status(400).json({ error: 'Invalid JSON' }) }
   }
 
-  const { messages, system } = body || {}
+  const { messages, system, mode } = body || {}
   if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'messages required' })
   }
 
-  const geminiMessages = messages.slice(-14).filter(m => m.role && m.content).map(m => ({
+  const geminiMessages = messages.slice(-10).filter(m => m.role && m.content).map(m => ({
     role: m.role === 'user' ? 'user' : 'model',
-    parts: [{ text: String(m.content).slice(0, 4000) }]
+    parts: [{ text: String(m.content).slice(0, 2000) }]
   }))
 
   if (geminiMessages.length === 0 || geminiMessages[0].role !== 'user') {
@@ -39,19 +39,32 @@ module.exports = async function handler(req, res) {
   }
 
   const GEMINI_KEY = process.env.GEMINI_API_KEY
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`
+
+  // gemini-2.0-flash-lite is the fastest available model
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_KEY}`
+
+  // Abort after 12 seconds so Vercel doesn't timeout silently
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 12000)
+
   try {
     const apiRes = await fetch(url, {
       method: 'POST',
+      signal: controller.signal,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         system_instruction: {
-          parts: [{ text: String(system || 'You are SynIQ, a warm personal AI tutor. Never say you are an AI or mention Google or Gemini. You are SynIQ.').slice(0, 3000) }]
+          parts: [{ text: String(system || 'You are SynIQ, a warm personal AI tutor. Never say you are an AI or mention Google or Gemini. You are SynIQ. Maximum 3 sentences per response.').slice(0, 2000) }]
         },
         contents: geminiMessages,
-        generationConfig: { maxOutputTokens: 900, temperature: 0.7 }
+        generationConfig: {
+          maxOutputTokens: mode === 'prompts' ? 150 : 400,
+          temperature: 0.7
+        }
       })
     })
+
+    clearTimeout(timer)
 
     if (!apiRes.ok) {
       const e = await apiRes.json().catch(() => ({}))
@@ -64,6 +77,10 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ reply })
 
   } catch (err) {
+    clearTimeout(timer)
+    if (err.name === 'AbortError') {
+      return res.status(504).json({ error: 'Request timed out — please try again!' })
+    }
     console.error('Proxy error:', err)
     return res.status(500).json({ error: 'Server error' })
   }
