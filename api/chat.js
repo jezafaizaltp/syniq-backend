@@ -61,7 +61,7 @@ module.exports = async function handler(req, res) {
         },
         contents: geminiMessages,
         generationConfig: {
-          maxOutputTokens: mode === 'prompts' ? 120 : 250,
+          maxOutputTokens: mode === 'prompts' ? 120 : 500,
           temperature: 0.7
         }
       })
